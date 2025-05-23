@@ -14,13 +14,13 @@ export default function Home() {
     try {
       const pubkey = new PublicKey(address);
       return PublicKey.isOnCurve(pubkey);
-    } catch (e) {
+    } catch {
       return false;
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError("");
 
     if (!wallet) {
@@ -72,7 +72,6 @@ export default function Home() {
         </button>
       </form>
 
-      {/* Link to Whitepaper */}
       <div className="mt-6 text-center">
         <a
           href="/whitepaper"

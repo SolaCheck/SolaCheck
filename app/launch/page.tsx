@@ -5,7 +5,7 @@ export default function LaunchPage() {
         Welcome to SolaCheck
       </h1>
       <p className="text-lg text-center max-w-xl text-gray-700">
-        This is where the magic will happen. Here you'll be able to explore wallet activity, summaries, and more.
+        This is where the magic will happen. Here you&apos;ll be able to explore wallet activity, summaries, and more.
       </p>
     </main>
   );

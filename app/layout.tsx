@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,7 +43,7 @@ export default function RootLayout({
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Logo + texto */}
             <div className="flex items-center gap-2">
-              <a
+              <Link
                 href="/"
                 className="flex items-center gap-2 hover:opacity-80 transition"
               >
@@ -55,7 +56,7 @@ export default function RootLayout({
                 <span className="text-white font-semibold text-base">
                   SolaCheck
                 </span>
-              </a>
+              </Link>
               <p className="ml-2 text-center md:text-left text-sm">
                 &copy; {new Date().getFullYear()} — Visibility & Privacy
               </p>
@@ -63,12 +64,12 @@ export default function RootLayout({
 
             {/* Enlaces */}
             <div className="flex flex-wrap justify-center md:justify-end gap-4">
-              <a
+              <Link
                 href="/whitepaper"
                 className="hover:text-white underline transition"
               >
                 Whitepaper
-              </a>
+              </Link>
               <a
                 href="mailto:solacheckorigin@gmail.com"
                 className="hover:text-white underline transition"

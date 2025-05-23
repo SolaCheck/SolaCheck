@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 
 interface NFT {
   name: string;
@@ -18,8 +19,8 @@ interface SPLToken {
 }
 
 export default function WalletPage() {
-  const params = useParams<{ address: string }>();
-  const address = params.address;
+  const params = useParams() as { address?: string };
+  const address = params.address ?? "";
 
   const [solBalance, setSolBalance] = useState<number>(0);
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -69,15 +70,24 @@ export default function WalletPage() {
           }
 
           const heliusData = await heliusResponse.json();
-          const fetchedNfts = heliusData.result.items.map((item: any) => ({
-            name: item.content?.metadata?.name || "Unknown NFT",
-            uri: item.content?.links?.image || "/placeholder.png",
-            mint: item.id,
-          }));
+          const fetchedNfts: NFT[] = heliusData.result.items.map(
+            (item: {
+              id: string;
+              content?: {
+                metadata?: { name?: string };
+                links?: { image?: string };
+              };
+            }) => ({
+              name: item.content?.metadata?.name || "Unknown NFT",
+              uri: item.content?.links?.image || "/placeholder.png",
+              mint: item.id,
+            })
+          );
 
           setNfts(fetchedNfts);
-        } catch (e) {
-          console.error("Error fetching NFTs via Helius:", e);
+        } catch (nftError) {
+          console.error("Error fetching NFTs via Helius:", nftError);
+          setError("Failed to load NFTs.");
         }
 
         try {
@@ -85,9 +95,12 @@ export default function WalletPage() {
             programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
           });
 
-          const tokens = tokenAccounts.value
+          const tokens: SPLToken[] = tokenAccounts.value
             .map(({ account }) => {
-              const info: any = account.data.parsed.info;
+              const info = account.data.parsed.info as {
+                tokenAmount: { amount: string; decimals: number };
+                mint: string;
+              };
               const amount = parseInt(info.tokenAmount.amount);
               const decimals = info.tokenAmount.decimals;
               const mint = info.mint;
@@ -96,11 +109,12 @@ export default function WalletPage() {
             .filter((token) => token.amount > 0);
 
           setSplTokens(tokens);
-        } catch (e) {
-          console.error("Error fetching SPL tokens:", e);
+        } catch (tokenError) {
+          console.error("Error fetching SPL tokens:", tokenError);
+          setError("Failed to load SPL tokens.");
         }
-      } catch (err: any) {
-        console.error(err);
+      } catch (err) {
+        console.error("Wallet fetch error:", err);
         setError("Invalid wallet address or error fetching data.");
       }
       setLoading(false);
@@ -111,6 +125,10 @@ export default function WalletPage() {
 
   function formatAmount(amount: number, decimals: number) {
     return (amount / Math.pow(10, decimals)).toFixed(decimals > 0 ? 4 : 0);
+  }
+
+  function isSafeImageUri(uri: string): boolean {
+    return uri.startsWith("https://") && /\.(jpg|jpeg|png|webp|gif|svg)$/.test(uri);
   }
 
   if (error) {
@@ -130,9 +148,9 @@ export default function WalletPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
+    <main className="min-h-screen bg-black text-white p-6">
       <h1 className="text-3xl font-bold mb-4 text-center">Wallet Information</h1>
-      <p className="text-lg text-gray-300 mb-2 text-center">
+      <p className="text-lg text-gray-300 mb-2 text-center break-all">
         Address: {address}
       </p>
       <p className="text-lg text-green-400 mb-6 text-center">
@@ -145,9 +163,12 @@ export default function WalletPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
           {splTokens.map((token) => (
-            <div key={token.mint} className="bg-gray-900 rounded-xl p-4 flex flex-col items-center">
+            <div
+              key={token.mint}
+              className="bg-gray-900 rounded-xl p-4 flex flex-col items-center"
+            >
               <p className="text-white font-semibold mb-2">
-                {token.symbol || token.mint.slice(0, 6) + "..."}
+                {token.symbol || `${token.mint.slice(0, 6)}...`}
               </p>
               <p className="text-green-400">
                 {formatAmount(token.amount, token.decimals)}
@@ -167,10 +188,12 @@ export default function WalletPage() {
               key={nft.mint}
               className="bg-gray-900 rounded-xl p-4 flex flex-col items-center"
             >
-              <img
-                src={nft.uri}
+              <Image
+                src={isSafeImageUri(nft.uri) ? nft.uri : "/placeholder.png"}
                 alt={nft.name}
-                className="w-40 h-40 object-cover rounded mb-2"
+                width={160}
+                height={160}
+                className="object-cover rounded mb-2"
               />
               <p className="text-white text-center mb-1">{nft.name}</p>
               <a
