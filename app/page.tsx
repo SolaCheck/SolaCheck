@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   const [wallet, setWallet] = useState("");
@@ -59,9 +60,7 @@ export default function Home() {
         <input
           type="text"
           value={wallet}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setWallet(e.target.value)
-          }
+          onChange={(e) => setWallet(e.target.value)}
           placeholder="Enter wallet address"
           className="w-full px-4 py-2 mb-2 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-white"
         />
@@ -75,12 +74,12 @@ export default function Home() {
       </form>
 
       <div className="mt-6 text-center">
-        <a
+        <Link
           href="/whitepaper"
           className="text-white underline hover:text-gray-300 transition"
         >
           📄 Read the Whitepaper – Visibility & Privacy
-        </a>
+        </Link>
       </div>
     </main>
   );
