@@ -22,11 +22,11 @@ export default function WalletPage() {
   const params = useParams() as { address?: string };
   const address = params.address ?? "";
 
-  const [solBalance, setSolBalance] = useState<number>(0);
+  const [solBalance, setSolBalance] = useState(0);
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [splTokens, setSplTokens] = useState<SPLToken[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!address) return;
@@ -42,82 +42,62 @@ export default function WalletPage() {
         const balance = await connection.getBalance(publicKey);
         setSolBalance(balance / 1e9);
 
-        try {
-          const heliusResponse = await fetch(
-            "https://mainnet.helius-rpc.com/?api-key=2f7ac0fb-908f-420c-aad8-290c7c0576e9",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                id: "get-nfts",
-                method: "getAssetsByOwner",
-                params: {
-                  ownerAddress: publicKey.toBase58(),
-                  page: 1,
-                  limit: 1000,
-                  displayOptions: {
-                    showUnverifiedCollections: true,
-                    showCollectionMetadata: true,
-                  },
+        const heliusResponse = await fetch(
+          "https://mainnet.helius-rpc.com/?api-key=2f7ac0fb-908f-420c-aad8-290c7c0576e9",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: "get-nfts",
+              method: "getAssetsByOwner",
+              params: {
+                ownerAddress: publicKey.toBase58(),
+                page: 1,
+                limit: 1000,
+                displayOptions: {
+                  showUnverifiedCollections: true,
+                  showCollectionMetadata: true,
                 },
-              }),
-            }
-          );
-
-          if (!heliusResponse.ok) {
-            throw new Error(`Helius API responded with status ${heliusResponse.status}`);
+              },
+            }),
           }
+        );
 
-          const heliusData = await heliusResponse.json();
-          const fetchedNfts: NFT[] = heliusData.result.items.map(
-            (item: {
-              id: string;
-              content?: {
-                metadata?: { name?: string };
-                links?: { image?: string };
-              };
-            }) => ({
-              name: item.content?.metadata?.name || "Unknown NFT",
-              uri: item.content?.links?.image || "/placeholder.png",
-              mint: item.id,
-            })
-          );
-
-          setNfts(fetchedNfts);
-        } catch (nftError) {
-          console.error("Error fetching NFTs via Helius:", nftError);
-          setError("Failed to load NFTs.");
+        if (!heliusResponse.ok) {
+          throw new Error(`Helius API responded with status ${heliusResponse.status}`);
         }
 
-        try {
-          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-            programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-          });
+        const heliusData = await heliusResponse.json();
+        const fetchedNfts: NFT[] = heliusData.result.items.map((item: any) => ({
+          name: item.content?.metadata?.name || "Unknown NFT",
+          uri: item.content?.links?.image || "/placeholder.png",
+          mint: item.id,
+        }));
 
-          const tokens: SPLToken[] = tokenAccounts.value
-            .map(({ account }) => {
-              const info = account.data.parsed.info as {
-                tokenAmount: { amount: string; decimals: number };
-                mint: string;
-              };
-              const amount = parseInt(info.tokenAmount.amount);
-              const decimals = info.tokenAmount.decimals;
-              const mint = info.mint;
-              return { mint, amount, decimals };
-            })
-            .filter((token) => token.amount > 0);
+        setNfts(fetchedNfts);
 
-          setSplTokens(tokens);
-        } catch (tokenError) {
-          console.error("Error fetching SPL tokens:", tokenError);
-          setError("Failed to load SPL tokens.");
-        }
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+          programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        });
+
+        const tokens: SPLToken[] = tokenAccounts.value
+          .map(({ account }) => {
+            const info = account.data.parsed.info;
+            const amount = parseInt(info.tokenAmount.amount);
+            const decimals = info.tokenAmount.decimals;
+            const mint = info.mint;
+            return { mint, amount, decimals };
+          })
+          .filter((token) => token.amount > 0);
+
+        setSplTokens(tokens);
       } catch (err) {
         console.error("Wallet fetch error:", err);
         setError("Invalid wallet address or error fetching data.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchData();
