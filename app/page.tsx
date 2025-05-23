@@ -59,7 +59,9 @@ export default function Home() {
         <input
           type="text"
           value={wallet}
-          onChange={(e) => setWallet(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setWallet(e.target.value)
+          }
           placeholder="Enter wallet address"
           className="w-full px-4 py-2 mb-2 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-white"
         />
