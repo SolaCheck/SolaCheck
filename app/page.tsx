@@ -13,8 +13,8 @@ export default function Home() {
 
   const isValidSolanaAddress = (address: string) => {
     try {
-      const pubkey = new PublicKey(address);
-      return PublicKey.isOnCurve(pubkey);
+      new PublicKey(address);
+      return true;
     } catch {
       return false;
     }
@@ -24,7 +24,7 @@ export default function Home() {
     event.preventDefault();
     setError("");
 
-    if (!wallet) {
+    if (!wallet.trim()) {
       setError("Please enter a wallet address.");
       return;
     }
@@ -45,6 +45,7 @@ export default function Home() {
           alt="SolaCheck Logo"
           width={250}
           height={250}
+          priority
         />
       </div>
 
@@ -58,6 +59,7 @@ export default function Home() {
 
       <form onSubmit={handleSubmit} className="w-full max-w-md">
         <input
+          id="wallet"
           type="text"
           value={wallet}
           onChange={(e) => setWallet(e.target.value)}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,16 +27,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        {/* Tidio Chatbot Script */}
-        <script
-          src="//code.tidio.co/mlf5ul569eb4lr4ni7btffeluwsbwes9.js"
-          async
-        ></script>
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
       >
+        {/* Tidio Chatbot Script */}
+        <Script
+          src="//code.tidio.co/mlf5ul569eb4lr4ni7btffeluwsbwes9.js"
+          strategy="afterInteractive"
+        />
+
         {children}
 
         {/* Footer global */}

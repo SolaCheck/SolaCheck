@@ -19,8 +19,7 @@ interface SPLToken {
 }
 
 export default function WalletPage() {
-  const params = useParams() as { address?: string };
-  const address = params.address ?? "";
+  const { address } = useParams() as { address?: string };
 
   const [solBalance, setSolBalance] = useState(0);
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -29,7 +28,11 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!address) return;
+    if (!address) {
+      setError("Invalid wallet address.");
+      setLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
       setLoading(true);
@@ -39,12 +42,12 @@ export default function WalletPage() {
           "https://mainnet.helius-rpc.com/?api-key=2f7ac0fb-908f-420c-aad8-290c7c0576e9"
         );
 
-        const balance = await connection.getBalance(publicKey);
-        setSolBalance(balance / 1e9);
-
-        const heliusResponse = await fetch(
-          "https://mainnet.helius-rpc.com/?api-key=2f7ac0fb-908f-420c-aad8-290c7c0576e9",
-          {
+        const [balance, tokenAccounts, heliusResponse] = await Promise.all([
+          connection.getBalance(publicKey),
+          connection.getParsedTokenAccountsByOwner(publicKey, {
+            programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+          }),
+          fetch("https://mainnet.helius-rpc.com/?api-key=2f7ac0fb-908f-420c-aad8-290c7c0576e9", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -61,25 +64,17 @@ export default function WalletPage() {
                 },
               },
             }),
-          }
-        );
+          }).then((res) => res.json()),
+        ]);
 
-        if (!heliusResponse.ok) {
-          throw new Error(`Helius API responded with status ${heliusResponse.status}`);
-        }
+        setSolBalance(balance / 1e9);
 
-        const heliusData = await heliusResponse.json();
-        const fetchedNfts: NFT[] = heliusData.result.items.map((item: any) => ({
+        const fetchedNfts: NFT[] = heliusResponse.result.items.map((item: any) => ({
           name: item.content?.metadata?.name || "Unknown NFT",
           uri: item.content?.links?.image || "/placeholder.png",
           mint: item.id,
         }));
-
         setNfts(fetchedNfts);
-
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-          programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-        });
 
         const tokens: SPLToken[] = tokenAccounts.value
           .map(({ account }) => {
@@ -108,8 +103,20 @@ export default function WalletPage() {
   }
 
   function isSafeImageUri(uri: string): boolean {
-    return uri.startsWith("https://") && /\.(jpg|jpeg|png|webp|gif|svg)$/.test(uri);
+    try {
+      const url = new URL(uri);
+      return (
+        url.protocol === "https:" &&
+        /\.(jpg|jpeg|png|webp|gif|svg|avif)$/i.test(url.pathname)
+      );
+    } catch {
+      return false;
+    }
   }
+
+  const shortAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : "";
 
   if (error) {
     return (
@@ -122,7 +129,10 @@ export default function WalletPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
+          <p className="text-gray-400">Fetching wallet data...</p>
+        </div>
       </main>
     );
   }
@@ -131,7 +141,7 @@ export default function WalletPage() {
     <main className="min-h-screen bg-black text-white p-6">
       <h1 className="text-3xl font-bold mb-4 text-center">Wallet Information</h1>
       <p className="text-lg text-gray-300 mb-2 text-center break-all">
-        Address: {address}
+        Address: <span title={address}>{shortAddress}</span>
       </p>
       <p className="text-lg text-green-400 mb-6 text-center">
         Balance: {solBalance.toFixed(4)} SOL
@@ -171,6 +181,7 @@ export default function WalletPage() {
               <Image
                 src={isSafeImageUri(nft.uri) ? nft.uri : "/placeholder.png"}
                 alt={nft.name}
+                title={nft.name}
                 width={160}
                 height={160}
                 className="object-cover rounded mb-2"
