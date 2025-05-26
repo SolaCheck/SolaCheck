@@ -18,6 +18,28 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SolaCheck",
   description: "Understand any wallet in seconds. Powered by SolaCheck.",
+  openGraph: {
+    title: "SolaCheck",
+    description: "Understand any wallet in seconds. Powered by SolaCheck.",
+    url: "https://solacheck.xyz",
+    siteName: "SolaCheck",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "SolaCheck",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SolaCheck",
+    description: "Understand any wallet in seconds. Powered by SolaCheck.",
+    creator: "@SolaCheck",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
@@ -29,6 +51,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
+        suppressHydrationWarning
       >
         {/* Tidio Chatbot Script */}
         <Script

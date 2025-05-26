@@ -18,6 +18,18 @@ interface SPLToken {
   symbol?: string;
 }
 
+interface HeliusItem {
+  id: string;
+  content?: {
+    metadata?: {
+      name?: string;
+    };
+    links?: {
+      image?: string;
+    };
+  };
+}
+
 export default function WalletPage() {
   const { address } = useParams() as { address?: string };
 
@@ -69,7 +81,7 @@ export default function WalletPage() {
 
         setSolBalance(balance / 1e9);
 
-        const fetchedNfts: NFT[] = heliusResponse.result.items.map((item: any) => ({
+        const fetchedNfts: NFT[] = heliusResponse.result.items.map((item: HeliusItem) => ({
           name: item.content?.metadata?.name || "Unknown NFT",
           uri: item.content?.links?.image || "/placeholder.png",
           mint: item.id,
